@@ -27,7 +27,7 @@ import {
   webhookSource,
   type SiteConfig,
 } from '../config'
-import { clearOverrides, hasLocalWebhook, writeOverrides } from '../lib/overrides'
+import { clearOverrides, hasLocalWebhook, readOverrides, writeOverrides } from '../lib/overrides'
 import { isDemoMode, maskWebhook, notifyOwner } from '../lib/notify'
 
 type Msg = { ok: boolean; text: string } | null
@@ -44,9 +44,17 @@ export function SetupPanel({ onClose }: { onClose: () => void }) {
   const refresh = useCallback(async () => {
     const c = await loadConfig()
     setLive(c)
-    setUrl(c.feishuWebhookUrl)
-    setSecret(c.feishuSecret)
-    setMsgType(c.feishuMessageType)
+    // ⚠️ 输入框只回填**本机覆盖**的值，绝不回填构建期注入的那份。
+    //
+    // 这里踩过一次：原来写的是 `setUrl(c.feishuWebhookUrl)`，而 c 是**生效配置**
+    // （含构建期注入的完整 Webhook）。于是 `?setup=1` 展开折叠区，
+    // 输入框里就是明文地址 —— 而这一页的地址在 README 里是公开的，
+    // 等于把「需要开 DevTools 才能拿到」变成「一个 URL 就能拿到」。
+    // 上面那块脱敏展示已经足够回答「配上了没有、从哪来」。
+    const o = readOverrides()
+    setUrl(o.feishuWebhookUrl ?? '')
+    setSecret(o.feishuSecret ?? '')
+    setMsgType(o.feishuMessageType ?? c.feishuMessageType)
     return c
   }, [])
 
@@ -165,9 +173,11 @@ export function SetupPanel({ onClose }: { onClose: () => void }) {
               <summary>本机临时覆盖（调试用，只影响这台设备）</summary>
               <div className="setup-advanced__body">
                 <p className="setup-hint">
-                  留空即不覆盖。这里存的值<strong>不会</strong>随页面发给别人，
-                  所以<strong>路人扫码时用的仍是构建期注入的那份</strong> ——
-                  别指望在这里填完，别人的手机就能收到。
+                  输入框里显示的是<strong>本机已存的值</strong>，不会显示构建期注入的那份
+                  —— 上面那块脱敏地址才是当前真正生效的。
+                  这里存的值<strong>不会</strong>随页面发给别人，所以
+                  <strong>路人扫码时用的仍是构建期注入的那份</strong>，
+                  别指望在这里填完别人的手机就能收到。
                 </p>
 
                 <label className="setup-field">
