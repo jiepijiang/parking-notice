@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="挪车通知">
+  <!-- 与票券左上角 .ticket-brand__mark 同一套视觉：黄底 + 墨色圆 + 票券色 P -->
+  <rect width="64" height="64" rx="14" fill="#f1c84b" />
+  <circle cx="32" cy="32" r="21" fill="#171916" />
+  <text
+    x="32"
+    y="32"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif"
+    font-size="27"
+    fill="#fffdf4"
+  >P</text>
+</svg>
