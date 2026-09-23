@@ -10,6 +10,7 @@
  */
 
 import type { SiteConfig } from '../config'
+import { isDemoMode } from '../lib/notify'
 import { TicketHeader } from './TicketHeader'
 import { TicketIntro } from './TicketIntro'
 import { NotifyForm } from './NotifyForm'
@@ -21,7 +22,7 @@ export function Ticket({ config }: { config: SiteConfig }) {
       <TicketHeader vehicleId={config.vehicleId} />
       <TicketIntro title={config.siteTitle} label={config.vehicleLabel} />
       <NotifyForm config={config} />
-      <TicketFooter enabled={config.notifyEnabled} />
+      <TicketFooter enabled={config.notifyEnabled} demo={isDemoMode(config)} />
     </article>
   )
 }

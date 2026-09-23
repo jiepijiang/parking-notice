@@ -43,33 +43,64 @@ npm run preview      # 本地预览构建产物
 
 ---
 
-## 接飞书（二选一）
+## 接飞书（一条命令 + 一个 Secret）
 
-### 方式 A：配置页（推荐，不进仓库）
+### 唯一推荐的做法：构建期注入
 
-打开 `<站点地址>?setup=1`，粘贴 Webhook 地址 → 「保存到本机」。
+Webhook 存进 GitHub Actions Secret，CI 构建时打进 JS 产物。
+**每个访客的浏览器都会拿到它 —— 所以任何人扫码都能通知到你。**
 
-这些值只写进**这台设备**的 `localStorage`（键 `parking-notice:config-override`），
-不会提交到仓库。配置页里还有一个「发一条测试消息」，接完当场就能验证通没通。
+```bash
+gh secret set FEISHU_WEBHOOK --repo <你>/<仓库>   # 粘贴 Webhook 后回车
+gh secret set FEISHU_SECRET  --repo <你>/<仓库>   # 只有开了「签名校验」才需要
+```
 
-> 为什么不在页面上常驻一个设置入口：这张票是给**路人**看的，
-> 多一个齿轮图标就多一份误触和困惑。所以藏在 `?setup=1` 后面，只有车主知道。
+设完 **Actions 会自动重跑一次部署吗？不会** —— 加 Secret 不触发工作流，
+去 Actions 页点一次 **Run workflow**（或随便推一个 commit）。
+
+验证方式：Actions 的构建日志里会打印
+
+```
+✅ 已注入 Webhook：http****abcd（长度 63）
+✅ 产物里已包含 Webhook（尾段 token 命中）
+```
+
+没配的话会是一条 **warning 注解**：`未注入飞书 Webhook::页面会走演示模式`。
+（日志只打印脱敏后的地址和长度，**绝不回显明文**。）
+
+> **为什么必须构建期注入 —— 这里踩过一个很贵的坑。**
+> 最初的实现把 Webhook 存在浏览器 `localStorage` 里。`localStorage` 是
+> **按设备隔离**的：在电脑上配好，用手机扫码打开，手机那份是空的。
+> 于是页面掉进「演示模式」，而当时的演示模式**返回的是成功** ——
+> 界面上原样显示「已匿名通知车主，请在安全位置耐心等候。」，
+> 车主那边一条消息都没有，**从页面上完全看不出问题**。
+> 纯静态站点没有服务端，配置要发给浏览器就藏不住；这里能做的、
+> 也是必须做的，是让它**不进仓库**（不进 git 历史、不被代码搜索和索引到），
+> 同时保证每个访客都拿得到。
+
+### 验证通没通
+
+打开 `<站点地址>?setup=1`，这是一页**接收诊断**：
+
+- 显示当前生效的接收方（**脱敏**成 `…/hook/FAKE****abcd`）和它的**来源**
+- 「发一条测试消息」用的是**当前生效配置**，等价于此刻有人扫码提交 ——
+  **想验证手机能不能发出去，就用手机打开这一页点一下**
+- 失败时**原样显示飞书返回的原因**（比如 `param invalid: incoming webhook access token invalid`），
+  同时写进浏览器控制台。访客那边看到的仍是原站那两句通用文案（他也没法处理具体原因）
 
 ### 怎么拿 Webhook
 
 飞书群 → 右上角设置 → 群机器人 → 添加机器人 → **自定义机器人** → 复制 Webhook 地址。
 
-如果开启了「签名校验」，把密钥也填进配置页的第二个输入框。
+如果开启了「签名校验」，密钥也要设成 `FEISHU_SECRET`。
 签名在**浏览器里现算**（`crypto.subtle` 的 HMAC-SHA256），不经过任何第三方，
 算法与飞书官方 Python 示例逐字节一致（`base64(HMAC-SHA256(key = "{timestamp}\n{secret}", msg = ""))`）。
 
-### 方式 B：写进 `public/parking-config.json`
+### 本机临时覆盖（调试用，别用来正式配置）
 
-改完提交，Actions 会自动重新部署。
-
-**⚠️ 本仓库是 public。** Webhook 地址 = 「往这个群发消息」的钥匙，
-提交上去等于公开。真要走这条路，至少：
-在机器人设置里加上**自定义关键词**（比如「挪车」），并接受被刷群的风险。
+诊断页底部折叠着一个「本机临时覆盖」，写进这台设备的 `localStorage`。
+**它不会随页面发给别人** —— 在这里填完，别人的手机照样收不到。
+留着只是为了本机换个地址试东西，不用重新部署。
 
 ### 最后一步：把二维码贴在车上
 
@@ -94,18 +125,37 @@ npm run qr        # 生成到 tools/out/（已 gitignore）
 > 把生成的 PNG 缩放到 2048 / 1024 / 512 / 246 / 123px 五档都能解出正确 URL，
 > 最终 PDF 里 4 张卡的码也都能解 —— 打印出来一定能扫。
 
+### 另一种（不推荐）：写进 `public/parking-config.json`
+
+**⚠️ 本仓库是 public。** Webhook 地址 = 「往这个群发消息」的钥匙，
+提交上去等于公开挂网上。真要走这条路，至少：
+在机器人设置里加上**自定义关键词**（比如「挪车」），并接受被刷群的风险。
+
 ---
 
 ## 配置优先级
 
-三层，后者盖前者：
+四层，后者盖前者：
 
-1. `src/config.ts` 里的 `DEFAULTS` —— 代码兜底
-2. `public/parking-config.json` —— 随仓库走，放文案
-3. `localStorage` —— 放 Webhook / 密钥，只在本机
+| 层 | 来源 | 放什么 | 谁会看到 |
+| --- | --- | --- | --- |
+| 1 | `src/config.ts` 的 `DEFAULTS` | 代码兜底 | — |
+| 2 | `public/parking-config.json` | 文案（随仓库） | 所有人 |
+| 3 | **构建期注入**（`vite.config.ts` 的 `define`） | **Webhook / 密钥** | 所有人（但不进仓库） |
+| 4 | `localStorage` | 本机调试 | 只有这台设备 |
 
-`loadConfig()` 只认识 `DEFAULTS` 里出现过的键（`pick()`），
-JSON 里写错键名不会静默吃掉整份配置，只会被忽略。
+- 第 3 层的值来自 `FEISHU_WEBHOOK` / `FEISHU_SECRET` / `FEISHU_MESSAGE_TYPE`
+  三个环境变量，CI 从 Actions Secret 取。**本地不设就是空串**，
+  页面走演示模式 —— 这是安全的默认值，不会误发。
+- 空串一律**不覆盖**下层。所以把诊断页的输入框清空再保存，
+  不会把第 3 层那份盖成空（这个坑在设计时就堵住了）。
+- `loadConfig()` 只认识 `DEFAULTS` 里出现过的键（`pick()`），
+  JSON 里写错键名不会静默吃掉整份配置，只会被忽略。
+- `webhookSource()` 会告诉诊断页当前生效值来自哪一层。
+
+> **⚠️ 别把 Webhook 放进第 2 层。** 那个文件是入库的，仓库 public，
+> 等于把钥匙公开挂在网上（连 git 历史里都有，删了也还在）。
+> 第 3 层是唯一既能让访客拿到、又不进仓库的位置。
 
 ---
 
@@ -202,10 +252,20 @@ JSON 里写错键名不会静默吃掉整份配置，只会被忽略。
    **代价：清掉浏览器数据或换设备就能绕过冷却。** 对「路人扫码通知车主」这个场景够用。
 2. **没有后端，也就没有服务端的请求校验。** 原站有蜜罐字段和限流；
    本项目保留了蜜罐 `<input name="website">`，但限流只能靠飞书机器人自身的频控。
-3. **配置页（`?setup=1`）是新增的**，原站没有。原因见上文「接飞书」。
-4. **入场动效是新增的**，原站是妙搭的加载壳。落位后 `transform` 归零，
+3. **`?setup=1` 这一页是新增的**，原站没有，现在是一页**接收诊断**（见上文「接飞书」）。
+4. **演示模式下 footer 和提交结果会明说「没发出去」**，原站没有这个状态
+   （它永远有后端）。具体两处偏离：
+   - footer 从「挪车通知服务可用 / 已启用防重复提醒」变成
+     「演示模式：未接入飞书 / 消息不会真正发出」，状态点转红；
+   - 提交后不再显示「已匿名通知车主」，而是
+     「本页面尚未接入接收方，消息没有真正发出。请联系车主或改用其他方式通知。」
+
+   **Webhook 正常注入时这两处都走原站文案，1:1 不受影响**（7 视口 × 34 项回归全过）。
+   之所以宁可偏离：早先的演示模式返回的是「成功」，界面和真发出去一模一样，
+   车主那边一条消息没有，**从页面上完全看不出问题** —— 这个坑真踩过。
+5. **入场动效是新增的**，原站是妙搭的加载壳。落位后 `transform` 归零，
    静态视觉与原来逐像素相同（34/34 就是带着动效跑的）。
-5. **不引入妙搭的任何运行时**：没有 Service Worker、没有平台外壳、没有水印角标。
+6. **不引入妙搭的任何运行时**：没有 Service Worker、没有平台外壳、没有水印角标。
 
 ---
 
@@ -228,29 +288,37 @@ build 时 `base = /<repo>/`，dev 仍是 `/`。
 > 不要用 `vite preview` 验证子路径 —— 它对所有路径都回退成 `index.html`
 > （连 JS/CSS 请求都返回 `text/html`），会误报一堆 404。
 
+**首次部署必须做的一件事**：在仓库 Settings → Secrets and variables → Actions 里
+加上 `FEISHU_WEBHOOK`（开了签名校验再加 `FEISHU_SECRET`），否则页面会走演示模式。
+**加 Secret 不会触发重新部署** —— 要去 Actions 页点一次 Run workflow。
+
 ---
 
 ## 目录
 
 ```
 src/
-  config.ts                 三层配置的合并逻辑
+  config.ts                 四层配置的合并逻辑 + webhookSource() 溯源
+  env.d.ts                  声明构建期注入的 __FEISHU_*__ 全局量
   lib/
-    notify.ts               飞书 Webhook + 签名 + 冷却
-    overrides.ts            localStorage 覆盖层（Webhook / 密钥）
+    notify.ts               飞书 Webhook + 签名 + 冷却 + 脱敏
+    overrides.ts            localStorage 覆盖层（本机调试）
   components/
     Ticket.tsx              整张票券
     TicketHeader/Intro/Footer.tsx
     NotifyForm.tsx          表单状态机（文案与原站逐条对齐）
     ReasonIcon.tsx          4 个 Lucide 图标逐字内联
-    SetupPanel.tsx          配置页（?setup=1）
+    SetupPanel.tsx          接收诊断页（?setup=1）
     reactbits/              React Bits 组件源码（ClickSpark / StarBorder / AnimatedContent）
   styles/
     ticket.css              逐字来自原站构建产物，纯静态视觉
     effects.css             React Bits 适配层
-    setup.css               配置页样式
+    setup.css               诊断页样式
 docs/reactbits-upstream/    AnimatedContent 的 gsap 原版（留作回退对照）
 tools/
   make-qr-card.mjs          生成贴车物料（二维码 + A4 提示卡）
   out/                      生成物，已 gitignore
 ```
+
+Webhook 的注入点在 `vite.config.ts` 的 `define` —— 想搞清楚配置从哪来，
+从那里往下读 `src/config.ts` 的 `loadConfig()` 即可。

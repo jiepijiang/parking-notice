@@ -29,6 +29,29 @@ function spaFallback() {
 export default defineConfig(({ command }) => ({
   // dev 走根路径，build 走仓库子路径
   base: command === 'build' ? `/${REPO_NAME}/` : '/',
+
+  /**
+   * 构建期把飞书 Webhook 打进产物 —— **这是 Webhook 的正式来源**。
+   *
+   * 为什么必须构建期注入：
+   *   · 放 `public/parking-config.json` → 那个文件是入库的，仓库 public，
+   *     Webhook 会进 git 历史、被代码搜索和搜索引擎索引到，等于把钥匙挂网上；
+   *   · 放 localStorage → **按设备隔离**。在电脑上配好、手机扫码打开，
+   *     手机那份是空的，页面掉进演示模式，车主什么都收不到。
+   *   纯静态站点没有服务端，所以「藏」是藏不住的；这里的目标是**不进仓库**，
+   *   同时保证每个访客的浏览器都拿得到。
+   *
+   * 值来自 GitHub Actions Secret（见 .github/workflows/deploy.yml）。
+   * 本地不设这两个环境变量就是空串 → 页面走演示模式，这是安全的默认值。
+   *
+   * 注意：Vite 的 define 是**文本替换**，所以必须 JSON.stringify 包一层。
+   */
+  define: {
+    __FEISHU_WEBHOOK__: JSON.stringify(process.env.FEISHU_WEBHOOK?.trim() ?? ''),
+    __FEISHU_SECRET__: JSON.stringify(process.env.FEISHU_SECRET?.trim() ?? ''),
+    __FEISHU_MESSAGE_TYPE__: JSON.stringify(process.env.FEISHU_MESSAGE_TYPE?.trim() ?? ''),
+  },
+
   plugins: [react(), spaFallback()],
   server: {
     host: '127.0.0.1',

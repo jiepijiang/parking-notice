@@ -31,9 +31,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # build 脚本是 `tsc --noEmit && vite build`，类型不过就不发
+      # build 脚本是 `tsc --noEmit && vite build`，类型不过就不发。
+      # 飞书 Webhook 由 vite.config.ts 的 define 从下面这两个环境变量读走，
+      # 打进 JS 产物 —— 这是「路人扫码能通知到车主」成立的前提。
+      # ⚠️ 这两个 Secret 没配也能构建成功，只是页面会走演示模式（footer 会明说）。
       - name: Build
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
         run: npm run build
+
+      # 构建日志里点一下就能看出到底注进去没有，不用去翻产物。
+      # 只打印脱敏后的地址和长度，绝不回显明文。
+      - name: 核对 Webhook 是否已注入
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+        run: |
+          if [ -z "$FEISHU_WEBHOOK" ]; then
+            echo "::warning title=未注入飞书 Webhook::页面会走演示模式（消息不会真正发出）。请在仓库 Settings → Secrets and variables → Actions 里添加 FEISHU_WEBHOOK。"
+          else
+            echo "✅ 已注入 Webhook：$(printf '%s' "$FEISHU_WEBHOOK" | cut -c1-4)****$(printf '%s' "$FEISHU_WEBHOOK" | tail -c4)（长度 ${#FEISHU_WEBHOOK}）"
+            if [ -z "$FEISHU_SECRET" ]; then
+              echo "ℹ️ 未提供 FEISHU_SECRET —— 机器人没开「签名校验」的话是正常的。"
+            else
+              echo "✅ 已注入签名密钥（长度 ${#FEISHU_SECRET}）"
+            fi
+          fi
+          # 兜底：产物里必须能找到这段 Webhook 的**尾部 token**，否则说明 define 没生效。
+          # ⚠️ 别用 `grep open.feishu.cn` 当判据 —— 诊断页输入框的 placeholder 里
+          #    本来就有这个域名，未注入时也会命中，是个假绿（真踩过）。
+          #    要拿 Webhook 自己的 token 尾段来查，那才是唯一的。
+          if [ -n "$FEISHU_WEBHOOK" ]; then
+            TAIL=$(printf '%s' "$FEISHU_WEBHOOK" | tail -c 16)
+            if grep -rqF "$TAIL" dist/assets/ 2>/dev/null; then
+              echo "✅ 产物里已包含 Webhook（尾段 token 命中）"
+            else
+              echo "::error title=注入失败::产物里找不到 Webhook 的 token 尾段，define 可能没生效。"
+              exit 1
+            fi
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

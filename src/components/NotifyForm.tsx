@@ -4,6 +4,7 @@
  * 状态机（phase）：
  *   idle ──选中原因──▶ 可提交
  *     └─提交─▶ submitting ─┬─成功─▶ success
+ *                          ├─演示─▶ demo   （没配接收方，没真发）
  *                          └─失败─▶ error（可再次提交）
  *
  * 文案与原站逐条对齐（含「匿名 / 带联系方式」两套措辞）：
@@ -14,9 +15,12 @@
  *   失败     通知未能发送，请检查网络后重试。      （网络层失败）
  *            通知服务暂时繁忙，请稍后重试。        （HTTP 5xx）
  *
- * 与原站的一处有意差异见 README「已知差异」：
- *   原站的防重复提醒在服务端（rateLimitMode: memory），纯静态站点没有服务端，
- *   这里改成浏览器本地冷却（cooldownSeconds，设为 0 可关闭）。
+ * 与原站的两处有意差异见 README「已知差异」：
+ *   ① 原站的防重复提醒在服务端（rateLimitMode: memory），纯静态站点没有服务端，
+ *      这里改成浏览器本地冷却（cooldownSeconds，设为 0 可关闭）。
+ *   ② 演示模式下**明确告知「消息没有发出」**。原站永远有后端，不存在这个状态；
+ *      我们这套是纯静态的，一旦 Webhook 没打进产物就会出现，
+ *      照抄原站的成功文案等于骗访客在原地白等。
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -25,7 +29,7 @@ import { ReasonIcon } from './ReasonIcon'
 import StarBorder from './reactbits/StarBorder'
 import { cooldownLeft, markSent, notifyOwner } from '../lib/notify'
 
-type Phase = 'idle' | 'submitting' | 'success' | 'error'
+type Phase = 'idle' | 'submitting' | 'success' | 'demo' | 'error'
 
 interface Panel {
   state: 'loading' | 'success' | 'error'
@@ -71,6 +75,18 @@ export function NotifyForm({ config }: { config: SiteConfig }) {
     })
 
     const res = await notifyOwner({ reason, requesterContact: contact.trim() }, config)
+
+    // 演示模式要**先判**，不能落到下面的 ok 分支 —— 这里说的是「没发出去」，
+    // 而界面上必须让访客看出来，否则他会以为车主马上就来挪车。
+    // 也不 markSent / 不计冷却：什么都没发生，没有理由限制他重试。
+    if (res.demo) {
+      setPhase('demo')
+      setPanel({
+        state: 'error',
+        text: '本页面尚未接入接收方，消息没有真正发出。请联系车主或改用其他方式通知。',
+      })
+      return
+    }
 
     if (res.ok) {
       markSent()

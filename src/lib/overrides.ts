@@ -1,16 +1,20 @@
 /**
- * 本机配置覆盖层。
+ * 本机配置覆盖层（调试用）。
  *
- * 存在的理由：仓库是 public，而飞书自定义机器人的 Webhook URL 只要泄露，
- * 任何人都能往群里灌消息。所以真实 Webhook **不该**写进
- * public/parking-config.json 一起提交。
+ * ⚠️ **这一层不能用来正式配置 Webhook。**
+ * localStorage 是**按设备隔离**的：在电脑上配好，用手机扫码打开，
+ * 手机那份是空的 → 页面走进演示模式 → 车主什么都收不到，
+ * 而且界面上完全看不出来（这个坑真踩过，见 README「已知差异」）。
+ * 正式配置走**构建期注入**（vite.config.ts 的 define + GitHub Actions Secret），
+ * 这样每个访客的浏览器都能拿到。
  *
- * 于是配置分三层，优先级从低到高：
- *   1. DEFAULTS                  —— 代码里的兜底值
- *   2. public/parking-config.json —— 随仓库走，放文案这类不敏感的东西
- *   3. localStorage（本文件）      —— 放 Webhook / 密钥，只在这台设备上
+ * 这一层剩下的用途：本机临时换个 Webhook 调试，不影响线上。
  *
- * 用法：打开 `<站点地址>?setup=1`，在配置页里粘贴 Webhook，保存即可。
+ * 配置优先级，从低到高：
+ *   1. DEFAULTS                    —— 代码里的兜底值
+ *   2. public/parking-config.json  —— 随仓库走，放文案这类不敏感的东西
+ *   3. 构建期注入（__FEISHU_*__）   —— CI 从 Actions Secret 打进产物，**正式来源**
+ *   4. localStorage（本文件）       —— 本机调试用，只在这台设备上
  */
 
 import type { SiteConfig } from '../config'
@@ -29,7 +33,10 @@ export function readOverrides(): Overrides {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const out: Record<string, unknown> = {}
     for (const k of OVERRIDABLE) {
-      if (typeof parsed[k] === 'string') out[k] = parsed[k]
+      // 空串当作「没覆盖」，不是「覆盖成空」。
+      // 否则在配置页把输入框清空再点保存，就会把构建期注入的那份盖成空串，
+      // 于是这台设备静默掉回演示模式 —— 又一个「看不出哪里不对」的坑。
+      if (typeof parsed[k] === 'string' && parsed[k] !== '') out[k] = parsed[k]
     }
     return out as Overrides
   } catch {
@@ -39,7 +46,14 @@ export function readOverrides(): Overrides {
 
 export function writeOverrides(next: Overrides) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(next))
+    // 同上：只存非空值，语义与 readOverrides 保持一致
+    const clean: Record<string, string> = {}
+    for (const k of OVERRIDABLE) {
+      const v = next[k]
+      if (typeof v === 'string' && v.trim() !== '') clean[k] = v.trim()
+    }
+    if (Object.keys(clean).length === 0) localStorage.removeItem(KEY)
+    else localStorage.setItem(KEY, JSON.stringify(clean))
   } catch {
     /* 隐私模式下 localStorage 会抛，忽略 */
   }
@@ -64,7 +78,7 @@ export function applyOverrides(base: SiteConfig): SiteConfig {
   return merged
 }
 
-/** 判断本机是否已经配过 Webhook —— 配置页用来显示当前状态 */
+/** 判断本机是否有覆盖 —— 配置页用来显示当前状态 */
 export function hasLocalWebhook(): boolean {
   return !!readOverrides().feishuWebhookUrl
 }

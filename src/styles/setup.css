@@ -121,6 +121,102 @@
   font-weight: 700;
 }
 
+/* ---- 诊断块：一眼看出「接收方配上了没有、从哪来的」 ---- */
+
+.setup-diag {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--muted);
+  border-radius: 3px;
+  background: #fffef9;
+  margin-bottom: 18px;
+}
+
+.setup-diag[data-state='ready'] {
+  border-left-color: var(--success);
+}
+
+.setup-diag[data-state='error'] {
+  border-left-color: var(--danger);
+}
+
+.setup-diag__row {
+  display: grid;
+  /* 标签定宽，三行值左对齐成一列 —— 用 flex + gap 会让每行的值起点参差不齐 */
+  grid-template-columns: 74px 1fr;
+  gap: 10px;
+  padding: 10px 13px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.setup-diag__row + .setup-diag__row {
+  border-top: 1px solid #ece7d6;
+}
+
+.setup-diag__label {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.setup-diag__value {
+  color: var(--ink);
+  min-width: 0;
+  /* 长地址必须能断行，否则会把卡片撑宽 */
+  overflow-wrap: anywhere;
+}
+
+.setup-diag__value code {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.74rem;
+}
+
+.setup-diag__value em {
+  color: var(--danger);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.setup-hint {
+  color: var(--muted);
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.setup-hint strong {
+  color: var(--ink);
+}
+
+/* ---- 折叠的「本机临时覆盖」 ---- */
+
+.setup-advanced {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+.setup-advanced > summary {
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 4px 0;
+}
+
+.setup-advanced > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.setup-advanced__body {
+  padding-top: 14px;
+}
+
+.setup-advanced__body .setup-field:first-of-type {
+  margin-top: 14px;
+}
+
 .setup-actions {
   display: grid;
   gap: 10px;
