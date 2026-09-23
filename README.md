@@ -73,9 +73,26 @@ npm run preview      # 本地预览构建产物
 
 ### 最后一步：把二维码贴在车上
 
-指向 `https://jiepijiang.github.io/parking-notice/` 生成二维码（任何在线工具都行，
-或者 `npx qrcode-terminal`），打印出来贴在前挡风玻璃内侧。
-路人扫码直接进这张票，不需要装 App、不需要注册。
+```bash
+npm run qr        # 生成到 tools/out/（已 gitignore）
+```
+
+产出三样：`qr.svg`（矢量，打印不糊）、`qr.png`（2048²，贴进 Word / 微信）、
+`挪车提示卡.html`（**A4 一版 4 张，卡片 95×130mm，二维码 48×48mm**）。
+浏览器打开那个 HTML → `Cmd/Ctrl + P` → 纸张 A4、缩放 **100%**（别选「适合页面」）→ 打印。
+
+地址不是写死的，脚本从 `vite.config.ts` 的 `REPO_NAME` 推导，
+**改仓库名之后记得重跑 `npm run qr`**，否则车上那张卡还指着老地址。
+换自定义域名：`npm run qr -- --url=https://your.domain/parking/`。
+
+**为什么是提示卡而不是光一张二维码**：路人看到一张孤零零的码，不知道那是什么、
+扫了会发生什么，多半就不扫了。卡上把「扫码即可匿名通知车主挪车」「不需要装 App、
+不需要注册」「不会看到车主手机号」三句写清楚，扫码意愿完全不一样。
+建议用**哑光**相纸或覆膜 —— 光面纸在阳光下反光，扫码器容易读不到。
+
+> 生成后建议真机扫一次再打印。这个项目的二维码做过反向验证：
+> 把生成的 PNG 缩放到 2048 / 1024 / 512 / 246 / 123px 五档都能解出正确 URL，
+> 最终 PDF 里 4 张卡的码也都能解 —— 打印出来一定能扫。
 
 ---
 
@@ -233,4 +250,7 @@ src/
     effects.css             React Bits 适配层
     setup.css               配置页样式
 docs/reactbits-upstream/    AnimatedContent 的 gsap 原版（留作回退对照）
+tools/
+  make-qr-card.mjs          生成贴车物料（二维码 + A4 提示卡）
+  out/                      生成物，已 gitignore
 ```

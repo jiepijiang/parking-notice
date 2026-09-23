@@ -13,3 +13,7 @@ dist-ssr
 # 本机配置（Webhook / 密钥）只存浏览器 localStorage，不该出现在仓库里。
 # 万一有人误导出成文件，这条兜一下。
 parking-config.local.json
+
+# 二维码物料的输出目录：内容由 tools/make-qr-card.mjs 从 REPO_NAME 推导，
+# 是构建产物不是源码，不进仓库
+tools/out/
