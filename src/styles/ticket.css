@@ -1,0 +1,670 @@
+/* =========================================================================
+   临时停车挪车通知 —— 票券样式
+   -------------------------------------------------------------------------
+   这个文件的内容**逐字来自原站构建产物**（index-BMYzKLT2.css 里 Tailwind 之后
+   的那一段，约 14KB）。类名、数值、顺序都保持原样，方便与原站源码对照。
+
+   唯一的改动：
+     · 去掉原站 `:root` 里 `color-scheme:light` 之后的 `background/color/font`
+       三行 —— 那三行是给妙搭外壳用的，本项目由 body 自己负责（见下）。
+     · 拆出「动效点缀」到 effects.css，本文件保持纯静态视觉。
+   ========================================================================= */
+
+:root {
+  /* —— 设计令牌（原站 :root 原样）—— */
+  --asphalt: #202321;
+  --asphalt-soft: #414641;
+  --ticket: #fffdf4;
+  --ticket-deep: #f8f1d9;
+  --parking-yellow: #f1c84b;
+  --parking-yellow-dark: #9a7300;
+  --ink: #171916;
+  --muted: #686b63;
+  --line: #d6d0ba;
+  --success: #17643b;
+  --success-bg: #e5f2e8;
+  --danger: #9e2f2a;
+  --danger-bg: #f8e8e3;
+  --focus: #2359a8;
+  --shadow: 0 24px 70px #00000047;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------------------
+   平台基础样式（Tailwind preflight 的等价物）
+   -------------------------------------------------------------------------
+   原站是 Vite + Tailwind 构建的，产物里 Tailwind 的 preflight 排在应用样式之前。
+   这些规则**不写不报错、只静默改变排版**，逐个元素比对时会差一大片：
+
+     · html{line-height:1.5}   → 所有未显式设行高的文字从 `normal`(~1.2) 变成 24px
+     · *,::before,::after{border:0 solid #dfe2e7}
+                               → 元素默认 border-width 是 0 而不是 none，
+                                 border-color 也有具体值（探针会读到差异）
+     · h1~h6{font-size:inherit;font-weight:inherit}
+                               → 不加的话 h2 会是浏览器默认的 bold 700，
+                                 原站是 400
+
+   顺序很重要：这段必须在组件样式**之前**，否则 `border:0` 会把组件自己的
+   边框全部抹掉。
+   ------------------------------------------------------------------------- */
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+::before,
+::after {
+  border: 0 solid #dfe2e7;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+html {
+  background: var(--asphalt);
+  min-width: 320px;
+  min-height: 100%;
+  color-scheme: light;
+  color: var(--ink);
+  font-family: Segoe UI, PingFang SC, Microsoft YaHei, sans-serif;
+}
+
+body {
+  background: linear-gradient(90deg, transparent 49.65%, #ffffff14 49.65% 50.35%, transparent 50.35%),
+    repeating-linear-gradient(135deg, #ffffff04 0 2px, transparent 2px 8px), var(--asphalt);
+  min-height: 100svh;
+  margin: 0;
+  /*
+   * 正文继承色。注意这里**不是** var(--ink)：
+   * 应用自己的 CSS 只在 html 上写了 color:var(--ink)，但原站外面套着妙搭外壳，
+   * 外壳的 body 样式把它盖掉了，实际渲染出来是 #1f2229。
+   * 逐个元素比对时读到的就是 #1f2229，所以这里按实际渲染值写，
+   * 保证 1:1。（--ink 仍用于边框、按钮底色等，那些没被外壳影响。）
+   */
+  color: #1f2229;
+  line-height: inherit;
+}
+
+button,
+a,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-shell {
+  width: min(100%, 480px);
+  padding: max(18px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  margin: 0 auto;
+}
+
+.parking-ticket {
+  background: var(--ticket);
+  box-shadow: var(--shadow);
+  border: 1px solid #ffffff70;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 票券两侧的「撕口」半圆 */
+.parking-ticket:before,
+.parking-ticket:after {
+  z-index: 2;
+  content: '';
+  background: var(--asphalt);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 218px;
+}
+
+.parking-ticket:before {
+  left: -13px;
+}
+
+.parking-ticket:after {
+  right: -13px;
+}
+
+.ticket-header {
+  background: var(--parking-yellow);
+  border-bottom: 2px solid var(--ink);
+  justify-content: space-between;
+  align-items: center;
+  min-height: 82px;
+  padding: 16px 20px;
+  display: flex;
+}
+
+.ticket-brand {
+  align-items: center;
+  gap: 10px;
+  display: flex;
+}
+
+.ticket-brand__mark {
+  width: 42px;
+  height: 42px;
+  color: var(--ticket);
+  background: var(--ink);
+  border-radius: 50%;
+  place-items: center;
+  font-family: Impact, Haettenschweiler, Arial Narrow Bold, sans-serif;
+  font-size: 1.65rem;
+  line-height: 1;
+  display: grid;
+}
+
+.ticket-brand__copy {
+  letter-spacing: 0.13em;
+  font-family: Arial Narrow, Segoe UI, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.ticket-meta {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  justify-items: end;
+  gap: 5px;
+  font-family: Consolas, Courier New, monospace;
+  font-size: 0.64rem;
+  font-weight: 700;
+  display: grid;
+}
+
+.ticket-intro {
+  min-height: 138px;
+  padding: 26px 24px 22px;
+}
+
+.eyebrow,
+.step-label {
+  color: var(--parking-yellow-dark);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0 0 7px;
+  font-family: Consolas, Courier New, monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+h1,
+h2,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  letter-spacing: -0.05em;
+  max-width: 12em;
+  margin: 0;
+  font-family: Arial Narrow, Microsoft YaHei, sans-serif;
+  font-size: clamp(2rem, 9vw, 2.85rem);
+  font-weight: 900;
+  font-stretch: 75%;
+  line-height: 1.02;
+}
+
+.vehicle-label {
+  max-width: 30em;
+  color: var(--muted);
+  margin: 14px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.cut-line {
+  color: #98927f;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  align-items: center;
+  gap: 10px;
+  font-family: Consolas, Courier New, monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  display: flex;
+  position: relative;
+}
+
+.cut-line:before,
+.cut-line:after {
+  content: '';
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px);
+  width: 100%;
+  height: 1px;
+}
+
+.ticket-action {
+  padding: 24px;
+}
+
+.section-heading {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 17px;
+  display: flex;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.anonymous-badge {
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid #b7d5bd;
+  border-radius: 2px;
+  flex: none;
+  padding: 5px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.anonymous-badge[data-mode='contact'] {
+  color: var(--ink);
+  background: #fff3bf;
+  border-color: #d7b73f;
+}
+
+fieldset {
+  border: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.reason-grid {
+  gap: 9px;
+  display: grid;
+}
+
+.reason-option {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: #fffef9;
+  border-radius: 3px;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 14px;
+  transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
+  display: grid;
+  position: relative;
+}
+
+.reason-option:hover {
+  border-color: #9d967e;
+}
+
+.reason-option:active {
+  transform: translateY(1px);
+}
+
+.reason-option:has(input:checked) {
+  border-color: var(--ink);
+  box-shadow: inset 4px 0 0 var(--parking-yellow);
+  background: #fff7d9;
+}
+
+.reason-option:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.reason-option input {
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+}
+
+.reason-option__icon {
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  font-family: Consolas, monospace;
+  font-size: 1rem;
+  font-weight: 900;
+  display: grid;
+}
+
+.reason-option__text {
+  gap: 3px;
+  display: grid;
+}
+
+.reason-option__text strong {
+  font-size: 0.95rem;
+}
+
+.reason-option__text small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.contact-field {
+  gap: 7px;
+  margin-top: 18px;
+  display: grid;
+}
+
+.contact-field label {
+  color: var(--ink);
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  display: flex;
+}
+
+.contact-field label span {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 2px 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.contact-field input {
+  width: 100%;
+  min-height: 46px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font: inherit;
+  background: #fffef9;
+  border-radius: 3px;
+  padding: 11px 12px;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.contact-field input::placeholder {
+  color: #8a8576;
+}
+
+.contact-field input:hover {
+  border-color: #9d967e;
+}
+
+.contact-field input:focus-visible {
+  border-color: var(--ink);
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.contact-field input[aria-invalid='true'] {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.contact-field input:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.contact-privacy-note {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.form-hint {
+  color: var(--muted);
+  margin: 12px 2px 15px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.status-panel {
+  color: var(--asphalt-soft);
+  border-left: 3px solid var(--muted);
+  background: #f0eee5;
+  grid-template-columns: 9px 1fr;
+  align-items: start;
+  gap: 9px;
+  margin: 0 0 14px;
+  padding: 11px 12px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  display: grid;
+}
+
+.status-panel[hidden] {
+  display: none;
+}
+
+.status-panel__mark {
+  background: currentColor;
+  border-radius: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.36em;
+}
+
+.status-panel[data-state='success'] {
+  color: var(--success);
+  background: var(--success-bg);
+  border-left-color: var(--success);
+}
+
+.status-panel[data-state='error'] {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-left-color: var(--danger);
+}
+
+.status-panel[data-state='loading'] .status-panel__mark {
+  animation: 0.9s ease-in-out infinite alternate status-pulse;
+}
+
+@keyframes status-pulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.primary-action,
+.secondary-action {
+  border-radius: 3px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-decoration: none;
+  display: flex;
+}
+
+.primary-action {
+  min-height: 58px;
+  color: var(--ticket);
+  cursor: pointer;
+  background: var(--ink);
+  border: 2px solid var(--ink);
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 1rem;
+  font-weight: 800;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+
+.primary-action:not(:disabled):hover {
+  color: var(--ink);
+  background: var(--parking-yellow);
+}
+
+.primary-action:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.primary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.primary-action__arrow {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.secondary-action {
+  min-height: 48px;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  background: 0 0;
+  gap: 9px;
+  margin-top: 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.secondary-action[hidden] {
+  display: none;
+}
+
+.secondary-action:hover {
+  background: var(--ticket-deep);
+}
+
+.primary-action:focus-visible,
+.secondary-action:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.ticket-footer {
+  min-height: 45px;
+  color: var(--muted);
+  background: var(--ticket-deep);
+  border-top: 1px solid var(--line);
+  letter-spacing: 0.02em;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  font-family: Consolas, Courier New, monospace;
+  font-size: 0.62rem;
+  display: flex;
+}
+
+.service-state {
+  align-items: center;
+  gap: 7px;
+  display: inline-flex;
+}
+
+.service-state__dot {
+  background: var(--parking-yellow-dark);
+  border-radius: 50%;
+  width: 7px;
+  height: 7px;
+}
+
+.service-state[data-state='ready'] .service-state__dot {
+  background: var(--success);
+}
+
+.service-state[data-state='error'] .service-state__dot {
+  background: var(--danger);
+}
+
+.privacy-note {
+  color: #ffffffad;
+  text-align: center;
+  max-width: 360px;
+  margin: 16px auto 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.honeypot {
+  width: 1px !important;
+  height: 1px !important;
+  position: absolute !important;
+  left: -10000px !important;
+  overflow: hidden !important;
+}
+
+.sr-only {
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+@media (min-width: 700px) {
+  .page-shell {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+}
+
+@media (max-width: 380px) {
+  .page-shell {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .ticket-header,
+  .ticket-action,
+  .ticket-intro {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .ticket-brand__copy {
+    display: none;
+  }
+  .ticket-meta {
+    font-size: 0.59rem;
+  }
+  .parking-ticket:before,
+  .parking-ticket:after {
+    top: 211px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  :before,
+  :after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

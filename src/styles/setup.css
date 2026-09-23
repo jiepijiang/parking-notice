@@ -1,0 +1,164 @@
+/* =========================================================================
+   配置页样式（?setup=1）
+   -------------------------------------------------------------------------
+   复用 ticket.css 里的设计令牌与 .page-shell / .ticket-footer /
+   .status-panel / .primary-action 等既有类，这里只补配置页独有的部分。
+   主页面完全不受本文件影响 —— 配置页只在 URL 带 ?setup=1 时才挂载。
+   ========================================================================= */
+
+.setup-shell {
+  width: min(100%, 560px);
+}
+
+.setup-card {
+  background: var(--ticket);
+  box-shadow: var(--shadow);
+  border: 1px solid #ffffff70;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.setup-head {
+  background: var(--parking-yellow);
+  border-bottom: 2px solid var(--ink);
+  padding: 20px 22px 18px;
+}
+
+.setup-head .eyebrow {
+  margin-bottom: 6px;
+}
+
+.setup-title {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-family: Arial Narrow, Microsoft YaHei, sans-serif;
+  font-weight: 900;
+  font-stretch: 75%;
+  letter-spacing: -0.02em;
+  margin: 0;
+  /* 上面这套是主页面 h1 的写法，但主页面 h1 是 clamp(2rem,9vw,2.85rem)，
+     配置页不需要那么大，单独收一下 */
+  max-width: none;
+}
+
+.setup-lede {
+  color: #4a4635;
+  margin: 9px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.setup-lede strong {
+  color: var(--ink);
+}
+
+.setup-body {
+  padding: 22px;
+}
+
+.setup-field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.setup-field > span {
+  color: var(--ink);
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  display: flex;
+}
+
+.setup-field input,
+.setup-field select {
+  width: 100%;
+  min-height: 46px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font: inherit;
+  background: #fffef9;
+  border-radius: 3px;
+  padding: 11px 12px;
+  font-size: 0.88rem;
+}
+
+.setup-field select {
+  cursor: pointer;
+}
+
+.setup-field input::placeholder {
+  color: #8a8576;
+}
+
+.setup-field input:hover,
+.setup-field select:hover {
+  border-color: #9d967e;
+}
+
+.setup-field input:focus-visible,
+.setup-field select:focus-visible {
+  border-color: var(--ink);
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.setup-field small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.setup-tag {
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid #b7d5bd;
+  border-radius: 2px;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.setup-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.setup-actions .primary-action,
+.setup-actions .secondary-action {
+  margin-top: 0;
+}
+
+.link-button {
+  color: #ffffffad;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
+  color: var(--ticket);
+}
+
+.link-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (max-width: 380px) {
+  .setup-body {
+    padding: 18px;
+  }
+  .setup-head {
+    padding: 18px;
+  }
+}

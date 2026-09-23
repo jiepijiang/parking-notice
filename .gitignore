@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# 本机配置（Webhook / 密钥）只存浏览器 localStorage，不该出现在仓库里。
+# 万一有人误导出成文件，这条兜一下。
+parking-config.local.json

@@ -1,0 +1,138 @@
+/* =========================================================================
+   React Bits 动效适配层
+   -------------------------------------------------------------------------
+   本文件只做一件事：把 React Bits 组件「接」进这张票券，
+   让它们带来的动效不破坏 ticket.css 里那套逐像素对齐的静态视觉。
+
+   为什么需要一层适配：
+     React Bits 的组件是按「独立演示」设计的（外层容器自带内边距、
+     固定圆角、深色底），直接套到已有排版上会把尺寸挤变形。
+     这里用**更高优先级的选择器**（.star-border-container.pb-xxx = 两个类）
+     做最小覆写，不去改 src/components/reactbits/ 里的原版源码 ——
+     原版保持可对照、可升级。
+
+   命名空间统一 pb-（parking-notice），避免和原站类名撞车。
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1) 入场 —— AnimatedContent
+   -------------------------------------------------------------------------
+   组件本身只写内联 transform/opacity，容器是普通 block。
+   这里补 display:flow-root，唯一目的是建立 BFC：
+
+     .privacy-note 带 margin-top:16px。父元素若是普通 block，
+     这个 margin 会「穿透」父元素、塌陷到父元素外面去，
+     结果整张票券被顶下去 16px（票券和说明文字之间的间距也会错位）。
+
+   flow-root 挡住塌陷后，内部间距与父元素高度都与原站逐像素一致。
+   ------------------------------------------------------------------------- */
+.pb-reveal {
+  display: flow-root;
+}
+
+/* -------------------------------------------------------------------------
+   2) 主按钮光带 —— StarBorder
+   -------------------------------------------------------------------------
+   StarBorder 的结构是「外层容器比内容大一圈，光带在那一圈里跑」：
+
+     <div class="star-border-container">        ← 容器，overflow:hidden
+       <div class="border-gradient-bottom">      ← 光带（绝对定位）
+       <div class="border-gradient-top">
+       <div class="inner-content">               ← 内容壳
+         <button class="primary-action">         ← 我们的按钮
+       </div>
+     </div>
+
+   它默认的容器是「内容 + 一圈内边距」，那一圈会露出票券的奶油底色，
+   等于凭空给黑按钮加了一圈描边。所以调用方传 thickness={0}，
+   让容器与按钮同为 308×58（.primary-action 是 1:1 比对项，尺寸一个像素都不能动），
+   光带则改到按钮**内侧**的上下 3px 里跑 —— 见下面的覆写。
+   ------------------------------------------------------------------------- */
+
+/* display 必须改成 block：原版是 inline-block，宽度会收缩到内容宽，
+   而按钮是 width:100%，百分比在 shrink-to-fit 里是循环依赖，结果不可预期。 */
+.star-border-container.pb-star-border {
+  display: block;
+  border-radius: 3px;
+}
+
+/* 内容壳归零：默认的 16px 26px 内边距会把按钮挤小，默认的深色底和边框
+   也会盖住票券。背景/文字色由组件的 props 传（内联，见 NotifyForm.tsx），
+   这里只处理内边距/边框/圆角。 */
+.star-border-container.pb-star-border > .inner-content {
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+}
+
+/* 光带压到按钮**之上**。原版是 z-index:0 藏在内容壳后面 ——
+   我们的按钮是不透明的 --ink 黑底，光带藏在后面等于完全看不见。 */
+.star-border-container.pb-star-border .border-gradient-bottom,
+.star-border-container.pb-star-border .border-gradient-top {
+  z-index: 2;
+  pointer-events: none;
+  /*
+   * 原版光带层高是容器的 50%（58px → 29px），再配上 300% 宽、border-radius:50%
+   * 的椭圆径向渐变，在这么矮的按钮上会糊成上下两团黄斑，而不是一条光。
+   * 压成 3px 贴着边圈，就成了一条扫过的亮线。
+   */
+  height: 3px;
+  opacity: 0.95;
+  /*
+   * 渐变形状必须换掉，这里用了 !important 去压组件的内联 background ——
+   * 组件写死的是 `radial-gradient(circle, ${color}, transparent 10%)`：
+   * 衰减半径只有整块画布的 10%，而画布是容器的 300% 宽（936px），
+   * 于是亮区只有 ~94px，一趟扫过 936px 里只亮 10% 的时间，
+   * 剩下 90% 的时间按钮上什么都看不到 —— 等于白装。
+   *
+   * 换成 20% 衰减：亮区约 187px、每趟亮 20% 的时间，
+   * 是一条能看清来去的流光，又不至于糊满整条边。
+   * 代价：组件的 color prop 会失效（渐变整条被替换），所以调用方不再传它。
+   */
+  background: radial-gradient(circle, rgba(241, 200, 75, 0.95), transparent 20%) !important;
+}
+
+/* 两个层各自贴住自己那一边的边圈（原版是 top/bottom: -12px，跑到内容区里去了） */
+.star-border-container.pb-star-border .border-gradient-bottom {
+  bottom: 0;
+}
+.star-border-container.pb-star-border .border-gradient-top {
+  top: 0;
+}
+
+/* 按钮禁用时（未选原因 / 冷却中 / 已发送）不要流光，太吵 */
+.star-border-container.pb-star-border:has(.primary-action:disabled)
+  .border-gradient-bottom,
+.star-border-container.pb-star-border:has(.primary-action:disabled)
+  .border-gradient-top {
+  animation-play-state: paused;
+  opacity: 0.15;
+}
+
+/* 焦点环搬家：容器是 overflow:hidden，会把按钮自己的 outline 裁掉。
+   outline 不会被元素**自身**的 overflow 裁剪，所以挂到容器上。 */
+.star-border-container.pb-star-border .primary-action:focus-visible {
+  outline: none;
+}
+.star-border-container.pb-star-border:has(.primary-action:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* -------------------------------------------------------------------------
+   3) 点击火花 —— ClickSpark
+   -------------------------------------------------------------------------
+   组件自带全部样式（canvas 绝对定位铺满父元素 + pointer-events:none），
+   不需要任何覆写。注意 sparkColor 必须传字面量颜色：
+   canvas 的 strokeStyle 不认 CSS 变量，传 'var(--parking-yellow)' 会静默失效。
+   ------------------------------------------------------------------------- */
+
+/* 尊重系统的「减弱动态效果」。
+   ticket.css 里已有一条全局兜底（把所有 transition/animation 压到 0.01ms），
+   这里额外把光带彻底停掉，避免只有边框在闪的怪异观感。 */
+@media (prefers-reduced-motion: reduce) {
+  .star-border-container.pb-star-border .border-gradient-bottom,
+  .star-border-container.pb-star-border .border-gradient-top {
+    display: none;
+  }
+}

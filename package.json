@@ -1,0 +1,24 @@
+{
+  "name": "parking-notice",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "临时停车挪车通知 H5 —— 票券风格，扫码即可匿名通知车主",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
+}
