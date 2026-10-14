@@ -6,7 +6,55 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#202321" />
     <meta name="description" content="临时停车挪车通知 —— 扫码即可匿名通知车主挪车" />
+    <meta name="author" content="Jerry" />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <meta name="format-detection" content="telephone=no,email=no,address=no" />
     <title>临时停车，请联系我</title>
+
+    <!--
+      og / twitter 分享卡片（2026-10-14 补）
+      ----------------------------------------------------------------------
+      在此之前本站**只有** description，没有任何 og / twitter 标签 ——
+      链接被分享到微信 / 飞书时**没有卡片**，只剩一条裸链接。
+
+      ⚠️ **og:image 必须写完整的绝对 URL（含 /parking-notice/ 子路径）。**
+         Vite 只重写「以 / 开头」的路径，https:// 开头的原样保留；
+         而分享卡片的抓取方**不解析相对路径**。
+         → 换域名 / 仓库名时这里要跟着改（和 vite.config.ts 的 REPO_NAME
+           是两处独立的地方；`npm run check:meta` 会拦下不一致）。
+
+      封面 `public/og-cover.jpg` 是**生成的**，不是拍的图 ——
+      本站没有任何位图素材（favicon 是 SVG，而 og:image 不支持 SVG）。
+      改完仓库名 / 域名要重跑 `node tools/make-og-cover.mjs`
+      （封面里印着二维码，指着老地址就白搭了）。
+
+      ⚠️ **没有 apple-touch-icon**：favicon 是 SVG，而 iOS 的
+         apple-touch-icon **只认 PNG**（不支持 SVG）。
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="临时停车，请联系我" />
+    <meta property="og:title" content="临时停车，请联系我" />
+    <meta
+      property="og:description"
+      content="临时停车挪车通知 —— 扫码即可匿名通知车主挪车，不用注册、不显示你的号码。"
+    />
+    <meta property="og:url" content="https://jiepijiang.github.io/parking-notice/" />
+    <meta property="og:image" content="https://jiepijiang.github.io/parking-notice/og-cover.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="临时停车，请联系我 —— 扫码通知车主挪车" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="临时停车，请联系我" />
+    <meta
+      name="twitter:description"
+      content="临时停车挪车通知 —— 扫码即可匿名通知车主挪车，不用注册、不显示你的号码。"
+    />
+    <meta name="twitter:image" content="https://jiepijiang.github.io/parking-notice/og-cover.jpg" />
   </head>
   <body>
     <div id="root"></div>

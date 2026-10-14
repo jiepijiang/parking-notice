@@ -72,6 +72,16 @@ jobs:
             fi
           fi
 
+      - name: 核对分享卡片标签（og / twitter）
+        # 必须在**构建之后**跑：og:image 里的域名 / 子路径与 vite.config.ts 的
+        # REPO_NAME 是**两处独立的地方**，换仓库名时只改一处，站点照样跑，
+        # 只有分享卡片静默指向一张 404 的图。脚本从产物反推实际 base
+        # 再要求 og 自洽，所以换名字时不用改它。
+        #
+        # ⚠️ 它只能保证**路径对**，保证不了封面里的**二维码指向对** ——
+        #    换域名后要重跑 `npm run og`。
+        run: npm run check:meta
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

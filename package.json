@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "qr": "node tools/make-qr-card.mjs"
+    "qr": "node tools/make-qr-card.mjs",
+    "og": "node tools/make-og-cover.mjs",
+    "check:meta": "node scripts/check-meta.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
